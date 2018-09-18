@@ -1,0 +1,84 @@
+package com.basm.socialmix;
+
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.support.annotation.NonNull;
+import android.support.design.widget.TextInputLayout;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class EditStatus extends AppCompatActivity {
+    private TextInputLayout TextStatus ;
+
+    private DatabaseReference DataBase ;
+
+    private ProgressDialog MProgressDialog ;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.edit_status);
+
+        MProgressDialog = new ProgressDialog(this);
+
+        Intent Value = getIntent();
+        String Status = Value.getStringExtra("Status");
+
+        TextStatus = (TextInputLayout)findViewById(R.id.input_status);
+
+        TextStatus.getEditText().setText(Status);
+
+        Button savestatu = (Button)findViewById(R.id.btsave);
+        savestatu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MProgressDialog.setTitle(R.string.ChangedStatus);
+                MProgressDialog.setMessage(getString(R.string.MassageChangeStatus));
+                MProgressDialog.show();
+
+                final String Status = TextStatus.getEditText().getText().toString().trim();
+
+                FirebaseUser CurrentUser = FirebaseAuth.getInstance().getCurrentUser();
+                String Uid = CurrentUser.getUid();
+
+
+
+                DataBase = FirebaseDatabase.getInstance().getReference().child("users").child(Uid);
+                Map user_map = new HashMap<>();
+                user_map.put("status",Status);
+
+                DataBase.updateChildren(user_map).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()){
+                            MProgressDialog.dismiss();
+                            TextStatus.getEditText().setText(Status);
+                            Toast.makeText(EditStatus.this,R.string.DoneChangedStatus, Toast.LENGTH_SHORT).show();
+                        }else {
+                            Toast.makeText(EditStatus.this,R.string.ErrorChangedStatus, Toast.LENGTH_SHORT).show();
+                            MProgressDialog.hide();
+                        }
+
+                    }
+                });
+
+            }
+        });
+
+
+    }
+}
